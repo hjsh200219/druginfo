@@ -303,6 +303,31 @@ def list_product_edicode(ProductCode: Optional[str] = None, EdiCode: Optional[st
     return _handle_response(resp)
 
 
+def list_product_edicode_same_ingredient(
+    ProductCode: Optional[str] = None,
+    EdiCode: Optional[str] = None,
+    MasterIngredientCode: Optional[str] = None,
+    timeout: int = 15,
+) -> Dict[str, Any]:
+    """
+    동일 주성분 제품(EDI 코드 기준) 목록을 조회합니다.
+
+    Query parameters (Swagger): ediCode, productCode, masterIngredientCode
+    이 함수는 인자명은 PascalCase를 받되, 실제 쿼리는 lowerCamelCase로 전송합니다.
+    """
+    base = _base_url()
+    url = f"{base}/v1/druginfo/product/edicode/same-ingredient"
+    params: Dict[str, Any] = {}
+    if EdiCode is not None:
+        params["ediCode"] = EdiCode
+    if ProductCode is not None:
+        params["productCode"] = ProductCode
+    if MasterIngredientCode is not None:
+        params["masterIngredientCode"] = MasterIngredientCode
+    resp = requests.get(url, headers=_headers(), params=params, timeout=timeout)
+    return _handle_response(resp)
+
+
 # --- (removed) Helpers for non-GET requests ---
 
 

@@ -1,7 +1,7 @@
-### Pilldoc User MCP (Local MCP Server)
+### DrugInfo MCP (Local MCP Server)
 
 
-이 프로젝트는 MCP 호환 클라이언트에서 사용할 수 있는 로컬 MCP 서버를 제공합니다. 로그인 토큰 발급과 주성분 목록 조회 기능을 도구(tool)로 노출합니다.
+이 프로젝트는 MCP 호환 클라이언트에서 사용할 수 있는 로컬 MCP 서버를 제공합니다. 로그인 도구와 DrugInfo(의약품/주성분/제품) 조회 도구들을 MCP Tool 로 노출합니다.
 
 ### 요구 사항
 - Python 3.9+
@@ -14,33 +14,30 @@ pip install -r requirements.txt
 ```
 
 ### 환경 변수 설정
-`.env.example`를 참고해 `.env.local`을 생성하세요.
-```bash
-cp .env.example .env.local
-vi .env.local
-```
+프로젝트 루트에 `.env.local` 파일을 생성하세요.
 - 필수
   - `EDB_BASE_URL` (예: https://dev-adminapi.edbintra.co.kr)
   - `EDB_LOGIN_URL` (예: https://dev-adminapi.edbintra.co.kr/v1/auth/login)
 - 선택
   - `EDB_USER_ID`, `EDB_PASSWORD` (로그인 시 기본값)
   - `EDB_FORCE_LOGIN` (true/false)
+  - `EDB_TIMEOUT` (기본 15)
 
-#### 환경 변수 예시
+#### 환경 변수 예시 (.env.local)
 개발 서버 예시
-```bash
-export EDB_BASE_URL="https://dev-adminapi.edbintra.co.kr"
-export EDB_LOGIN_URL="https://dev-adminapi.edbintra.co.kr/v1/auth/login"
-export EDB_USER_ID="YOUR_ID"
-export EDB_PASSWORD="YOUR_PASSWORD"
+```ini
+EDB_BASE_URL=https://dev-adminapi.edbintra.co.kr
+EDB_LOGIN_URL=https://dev-adminapi.edbintra.co.kr/v1/auth/login
+EDB_USER_ID=YOUR_ID
+EDB_PASSWORD=YOUR_PASSWORD
 ```
 
 실서버 예시
-```bash
-export EDB_BASE_URL="https://webconsole-api.edbintra.co.kr"
-export EDB_LOGIN_URL="https://webconsole-api.edbintra.co.kr/v1/auth/login"
-export EDB_USER_ID="YOUR_ID"
-export EDB_PASSWORD="YOUR_PASSWORD"
+```ini
+EDB_BASE_URL=https://webconsole-api.edbintra.co.kr
+EDB_LOGIN_URL=https://webconsole-api.edbintra.co.kr/v1/auth/login
+EDB_USER_ID=YOUR_ID
+EDB_PASSWORD=YOUR_PASSWORD
 ```
 
 ### 서버 환경
@@ -66,122 +63,51 @@ MCP 호환 클라이언트(예: IDE/Agent)에서 이 디렉토리를 로컬 서�
 ### 제공 도구 (Tools)
 - `login(userId?, password?, force?, loginUrl?, timeout?) -> token`
   - 미지정 시 환경변수 사용: `EDB_USER_ID`, `EDB_PASSWORD`, `EDB_LOGIN_URL`
-- `pilldoc_accounts(token? | userId/password, baseUrl?, accept?, timeout?, pageSize?, page?, sortBy?, erpKind?, isAdDisplay?, adBlocked?, salesChannel?, pharmChain?, currentSearchType?, searchKeyword?, accountType?) -> JSON`
-- `pilldoc_user(token, baseUrl, id, accept?, timeout?) -> JSON`
-- `pilldoc_pharm(token, baseUrl, bizno, accept?, timeout?) -> JSON`
-- `pilldoc_adps_rejects(bizNo, token? | userId/password, baseUrl?, accept?, timeout?) -> JSON`
-- `pilldoc_adps_reject(bizNo, campaignId, comment, token? | userId/password, baseUrl?, accept?, timeout?) -> JSON`
-- `pilldoc_user_from_accounts(accountField?, accountValue?, index?, token? | userId/password, baseUrl?, accept?, timeout?, pageSize?, page?, sortBy?, erpKind?, isAdDisplay?, adBlocked?, salesChannel?, pharmChain?, currentSearchType?, searchKeyword?, accountType?) -> JSON`
-- `pilldoc_accounts_stats(token? | userId/password, baseUrl?, accept?, timeout?, pageSize?, maxPages?, sortBy?, erpKind?, isAdDisplay?, adBlocked?, salesChannel?, pharmChain?, currentSearchType?, searchKeyword?, accountType?) -> JSON`
-  - 계정 목록을 페이지네이션으로 수집하여 통계를 집계합니다.
-  - 반환: `totalCountReported`, `pagesFetched`, `period.from/to`, `stats.monthly/region/erpCode/adBlocked`
-- `pilldoc_update_account(id, body, token? | userId/password, baseUrl?, accept?, timeout?, contentType?) -> JSON`
-   - `/v1/pilldoc/account/{id}`로 PATCH 호출하여 약국/계정 정보를 수정
-- `pilldoc_update_account_by_search(body, pharmName?, bizNo?, exact?, index?, accountType?, currentSearchType?, maxPages?, pageSize?, salesChannel?, erpKind?, pharmChain?, token? | userId/password, baseUrl?, accept?, timeout?, contentType?) -> JSON`
-   - `/v1/pilldoc/accounts`에서 약국명/사업자번호로 id를 찾은 뒤 `/v1/pilldoc/account/{id}` PATCH 수행
-  - `pharmChain` 배열 필터 지원: 지정 시 체인 소속으로 추가 필터링
-  - `salesChannel`/`erpKind` 배열 필터 지원
-  - `maxPages`: 검색 페이지 수 제한(0이면 전체), 대량 데이터에서 유용
-  - `contentType`: PATCH 요청 Content-Type 지정(기본 `application/json`)
-  - `bizNo`는 하이픈 포함 형태(`317-87-01363`)로 입력해도 자동 정규화되어 조회됩니다.
-  - `/v1/pilldoc/accounts`에서 계정을 골라 ID를 얻은 뒤 `/v1/pilldoc/user/{id}` 상세를 반환
+- `druginfo_list_main_ingredient(a4?, a4Off?, a5?, a5Off?, drugkind?, drugkindOff?, effect?, effectOff?, showMapped?, IngredientCode?, ingredientNameKor?, drugKind?, PageSize?, Page?, SortBy?, q?, page?, size?, timeout?) -> JSON`
+- `druginfo_get_main_ingredient_by_code(code, timeout?) -> JSON`
+- `druginfo_list_product(crop?, cropOff?, base64?, base64Off?, watermark?, watermarkOff?, confirm?, confirmOff?, teoulLengthShort?, teoulLengthShortOff?, teoulLengthLong?, teoulLengthLongOff?, minCount?, ProductCode?, pillName?, vendor?, PageSize?, Page?, SortBy?, q?, page?, size?, timeout?) -> JSON`
+- `druginfo_get_product_by_code(code, timeout?) -> JSON`
+- `druginfo_list_main_ingredient_drug_effect(edit?, pageSize?, page?, sortBy?, timeout?) -> JSON`
+- `druginfo_get_main_ingredient_drug_effect_by_id(effectId, timeout?) -> JSON`
+- `druginfo_list_main_ingredient_drug_kind(edit?, pageSize?, page?, sortBy?, timeout?) -> JSON`
+- `druginfo_list_main_ingredient_guide_a4(edit?, pageSize?, page?, sortBy?, timeout?) -> JSON`
+- `druginfo_list_main_ingredient_guide_a5(edit?, pageSize?, page?, sortBy?, timeout?) -> JSON`
+- `druginfo_list_main_ingredient_picto(IsDeleted?, Title?, PageSize?, Page?, SortBy?, timeout?) -> JSON`
+- `druginfo_get_main_ingredient_picto_by_code(code, timeout?) -> JSON`
+- `druginfo_list_product_edicode(ProductCode?, EdiCode?, PageSize?, Page?, SortBy?, timeout?) -> JSON`
+- `druginfo_list_product_edicode(ProductCode?, EdiCode?, PageSize?, Page?, SortBy?, timeout?) -> JSON`
+- `druginfo_list_product_edicode_same_ingredient(ProductCode?, EdiCode?, MasterIngredientCode?, timeout?) -> JSON`
 
 ### 간단 호출 예 (개념)
 - 토큰 발급: `login({ userId, password, force: true })`
-- pilldoc 계정: `pilldoc_accounts({ token, baseUrl })`
-- 광고 차단된 약국만: `pilldoc_accounts({ adBlocked: true })`  // 내부적으로 `isAdDisplay: 0`으로 매핑
-- 광고 차단되지 않은 약국만: `pilldoc_accounts({ adBlocked: false })`  // 내부적으로 `isAdDisplay: 1`으로 매핑
-- 월별/지역별 등 통계: `pilldoc_accounts_stats({ pageSize: 200, maxPages: 0 })`
-- pilldoc 사용자: `pilldoc_user({ token, baseUrl, id: "USER_ID" })`
-- pilldoc 계정 검색: `pilldoc_accounts({ pageSize: 20, page: 1, erpKind: ["iT3000"], accountType: "일반" })`
-- pilldoc 사용자(계정에서 선택): `pilldoc_user_from_accounts({ searchKeyword: "홍길동", currentSearchType: ["s"], index: 0 })`
-- pilldoc 약국: `pilldoc_pharm({ token, baseUrl, bizno: "사업자번호" })`
-- 차단 캠페인: `pilldoc_adps_rejects({ token, baseUrl, bizNo: "사업자번호" })`
-  - 차단 등록: `pilldoc_adps_reject({ token, baseUrl, bizNo: "사업자번호", campaignId: 123, comment: "사유" })`
+- 주성분 검색: `druginfo_list_main_ingredient({ ingredientNameKor: "아세트아미노펜", PageSize: 20 })`
+- 주성분 상세: `druginfo_get_main_ingredient_by_code({ code: "ING-0001" })`
+- 제품 검색: `druginfo_list_product({ pillName: "타이레놀", PageSize: 20 })`
+- 제품 상세: `druginfo_get_product_by_code({ code: "PRD-0001" })`
+- 약효 목록: `druginfo_list_main_ingredient_drug_effect({ pageSize: 50 })`
 
-#### 약국 정보 업데이트 예시
-```json
-// 호출 예 (개념)
-{
-  "id": "d596dbdb-5a96-4970-8fd9-08bae9021e05",
-  "body": {
-    "userType": "pharm",
-    "displayName": "string",
-    "email": "user@example.com",
-    "memberShipType": "basic",
-    "isDisable": true,
-    "lockoutEnabled": true,
-    "unLockAccount": true,
-    "약국명": "string",
-    "accountType": "일반",
-    "관리자승인여부": true,
-    "요양기관번호": "string",
-    "약국전화번호": "string",
-    "휴대전화번호": "string",
-    "pharAddress": "string",
-    "pharAddressDetail": "string",
-    "latitude": 0,
-    "longitude": 0,
-    "bcode": "string",
-    "pharmChain": "string",
-    "erpCode": 0,
-    "영업채널Code": 0,
-    "salesManagerId": 0,
-    "필첵QR표기": "표시",
-    "약국광고표기": "표시"
-  }
-}
+### CLI (선택)
+토큰 발급 및 Bearer GET 테스트를 위한 CLI 유틸이 있습니다.
+
+```bash
+# 로그인 후 토큰만 출력
+python -m src.login_jwt --url "$EDB_LOGIN_URL" --userId "YOUR_ID" --password "YOUR_PASSWORD"
+
+# 전체 로그인 응답(JSON) 출력
+python -m src.login_jwt --url "$EDB_LOGIN_URL" --userId "YOUR_ID" --password "YOUR_PASSWORD" --raw
+
+# 토큰으로 임의의 GET 수행
+python -m src.login_jwt --get "https://dev-adminapi.edbintra.co.kr/v1/druginfo/product?pillName=타이레놀" --token "YOUR_TOKEN"
 ```
 
-#### 검색 후 약국 정보 업데이트 예시 (adpsRejects 포함)
-```json
-// 호출 예 (개념)
-{
-  "pharmName": "OOO약국",
-  "pharmChain": ["온누리약국"],
-  "salesChannel": [5],
-  "erpKind": ["IT3000", "EPHARM"],
-  "maxPages": 0,
-  "contentType": "application/json",
-  "body": {
-    "약국명": "OOO약국",
-    "약국전화번호": "02-000-0000",
-    "휴대전화번호": "010-0000-0000"
-  }
-}
-```
-참고: `pilldoc_find_pharm` 결과의 `matches[*]`에는 `account`, `user`, `pharm`에 더해 `adpsRejects`가 포함됩니다.
-
-### pharmChain 허용 값
-- 온누리약국
-- 옵티마케어
-- 더블유스토어
-- 휴베이스
-- 리드팜
-- 메디팜
-- 데이팜
-- 위드팜
-- 참약사
-
-### salesChannel 코드
-- 1: 약학정보원
-- 2: 비트
-- 3: 한미
-- 0: 터울
-- 4: 팜플
-- 5: 이디비
-
-### erpKind 코드
-- IT3000: [약학정보원] PharmIT3000
-- BIZPHARM: [비트컴퓨터] BizPharm-C
-- DAYPHARM: [데이팜] DayPharm
-- WITHPHARM: [위드팜] WithPharmErp
-- EPHARM: [이디비] EPharm
-- EGHIS: [이지스헬스케어] 이지스팜
+<!-- Pilldoc 관련 섹션 제거: 본 프로젝트의 현재 도구 세트에는 포함되지 않습니다. -->
 
 ### 디렉토리
 - `src/mcp_server.py`: MCP 서버 엔트리
 - `src/auth.py`: 로그인/토큰 유틸
+- `src/mcp_tools/auth_tools.py`: `login` MCP 도구 등록 및 자동 로그인 처리
+- `src/mcp_tools/druginfo_tools.py`: DrugInfo 조회 MCP 도구들 등록
+- `src/druginfo/`: DrugInfo API 호출 모듈
 
 ### Claude Desktop 설정
 macOS(로컬)에서 Claude Desktop과 연동하려면 아래 설정 파일을 생성하세요.

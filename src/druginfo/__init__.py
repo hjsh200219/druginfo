@@ -13,6 +13,7 @@ from .client import (
     list_main_ingredient_picto,
     get_main_ingredient_picto_by_code,
     list_product_edicode,
+    list_product_edicode_same_ingredient,
 )
 __all__ = [
     "list_main_ingredient",
@@ -29,6 +30,7 @@ __all__ = [
     "list_main_ingredient_picto",
     "get_main_ingredient_picto_by_code",
     "list_product_edicode",
+    "list_product_edicode_same_ingredient",
 ]
 
 

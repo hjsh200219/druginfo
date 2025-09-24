@@ -17,6 +17,7 @@ from src.druginfo import (
     list_main_ingredient_picto,
     get_main_ingredient_picto_by_code,
     list_product_edicode,
+    list_product_edicode_same_ingredient,
 )
 from src.mcp_tools.auth_tools import _try_auto_login
 
@@ -279,6 +280,16 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
         except UnauthorizedError:
             _try_auto_login(timeout)
             return list_product_edicode(ProductCode=ProductCode, EdiCode=EdiCode, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout))
+        except DrugInfoError as e:
+            raise RuntimeError(str(e))
+
+    @mcp.tool(name="druginfo_list_product_edicode_same_ingredient")
+    def druginfo_list_product_edicode_same_ingredient(ProductCode: Optional[str] = None, EdiCode: Optional[str] = None, MasterIngredientCode: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+        try:
+            return list_product_edicode_same_ingredient(ProductCode=ProductCode, EdiCode=EdiCode, MasterIngredientCode=MasterIngredientCode, timeout=int(timeout))
+        except UnauthorizedError:
+            _try_auto_login(timeout)
+            return list_product_edicode_same_ingredient(ProductCode=ProductCode, EdiCode=EdiCode, MasterIngredientCode=MasterIngredientCode, timeout=int(timeout))
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
