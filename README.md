@@ -75,8 +75,12 @@ MCP 호환 클라이언트(예: IDE/Agent)에서 이 디렉토리를 로컬 서�
 - `druginfo_list_main_ingredient_picto(IsDeleted?, Title?, PageSize?, Page?, SortBy?, timeout?) -> JSON`
 - `druginfo_get_main_ingredient_picto_by_code(code, timeout?) -> JSON`
 - `druginfo_list_product_edicode(ProductCode?, EdiCode?, PageSize?, Page?, SortBy?, timeout?) -> JSON`
-- `druginfo_list_product_edicode(ProductCode?, EdiCode?, PageSize?, Page?, SortBy?, timeout?) -> JSON`
 - `druginfo_list_product_edicode_same_ingredient(ProductCode?, EdiCode?, MasterIngredientCode?, timeout?) -> JSON`
+
+### 시스템 프롬프트 (System Prompts)
+MCP 클라이언트에서 다음 프롬프트를 사용할 수 있습니다:
+- `druginfo_tool_usage_guide`: DrugInfo 도구 사용 가이드라인 (토큰 최적화, 검색 전략, 도구별 사용법)
+- `druginfo_common_queries`: 자주 사용하는 쿼리 패턴 예시
 
 ### 간단 호출 예 (개념)
 - 토큰 발급: `login({ userId, password, force: true })`
