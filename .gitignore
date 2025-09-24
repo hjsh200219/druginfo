@@ -96,6 +96,7 @@ celerybeat.pid
 # Environments
 .env
 .env.*
+.env.local
 .venv
 venv/
 ENV/
@@ -136,5 +137,15 @@ venv.bak/
 # System
 Thumbs.db
 
+# Claude Desktop & MCP
 .claude/*
 CLAUDE.md
+CLAUDE*.md
+
+# MCP Server logs and cache
+*.mcp.log
+mcp_cache/
+
+# Temporary files
+*.tmp
+*.temp
