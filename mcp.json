@@ -1,14 +1,24 @@
 {
   "name": "druginfo-mcp",
-  "version": "0.1.0",
-  "entry": "python -m src.mcp_server",
+  "version": "1.0.0",
+  "entry": "python -m src.server",
+  "description": "의약품 정보 조회를 위한 MCP 서버",
   "env": {
     "PYTHONUNBUFFERED": "1"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true
   },
   "dependencies": [
     {
       "name": "python",
       "version": ">=3.9"
+    },
+    {
+      "name": "mcp",
+      "version": ">=1.0.0"
     }
   ]
 }

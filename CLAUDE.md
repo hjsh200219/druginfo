@@ -1,140 +1,185 @@
 # CLAUDE.md
 
-이 파일은 Claude Code (claude.ai/code)가 이 저장소의 코드를 작업할 때 필요한 가이드를 제공합니다.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 프로젝트 개요
 
-의약품 정보 시스템(Pilldoc/EDB)을 위한 Python 기반 MCP (Model Context Protocol) 서버입니다. 현재 구현된 기능:
-- **인증 도구**: 로그인 및 토큰 관리
-- **약물 정보 도구**: 주성분, 제품, 약효, 가이드, 픽토그램 조회
-
-주의: README.md에는 많은 추가 pilldoc 도구들(accounts, user, pharm 등)이 나열되어 있지만 실제 코드베이스에는 아직 구현되지 않았습니다.
+의약품 정보 시스템(EDB)을 위한 Python 기반 MCP (Model Context Protocol) 서버입니다. 표준 MCP SDK를 사용하여 의약품 정보 조회 도구, 리소스, 프롬프트를 MCP 클라이언트에 제공합니다.
 
 ## 개발 명령어
 
-### 초기 설정
+### 개발 환경 설정
 ```bash
 # 가상 환경 생성 및 활성화
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 의존성 설치
+# 의존성 설치 (requests, python-dotenv, mcp)
 pip install -r requirements.txt
 ```
 
-### 서버 실행
+### MCP 서버 실행
 ```bash
-# 독립형 MCP 서버로 실행
-python -m src.mcp_server
+# 표준 MCP 서버 실행
+python -m src.server
 
-# 인증 기능 테스트
-python -c "from src.auth import login_and_get_token; print(login_and_get_token('LOGIN_URL', 'USER_ID', 'PASSWORD'))"
+# 직접 인증 테스트 (CLI)
+python -m src.login_jwt --url "$EDB_LOGIN_URL" --userId "ID" --password "PW"
 
-# 약물 정보 기능 테스트 (환경에 유효한 토큰 필요)
-python -c "from src.druginfo import list_main_ingredient; print(list_main_ingredient())"
+# Bearer 토큰으로 API 호출 테스트
+python -m src.login_jwt --get "https://dev-adminapi.edbintra.co.kr/v1/druginfo/product?pillName=타이레놀" --token "TOKEN"
 ```
 
-### 환경 변수
-환경 변수 설정 (Claude Desktop config나 시스템 환경에 설정):
-- `EDB_BASE_URL`: EDB 관리자 API 기본 URL (예: https://dev-adminapi.edbintra.co.kr)
-- `EDB_LOGIN_URL`: 로그인 엔드포인트 URL (예: https://dev-adminapi.edbintra.co.kr/v1/auth/login)
-- `EDB_USER_ID`: 인증용 기본 사용자 이메일
-- `EDB_PASSWORD`: 인증용 기본 비밀번호
+### 필수 환경 변수
 
-선택 사항:
-- `EDB_FORCE_LOGIN`: 강제 재로그인 (true/false)
-- `EDB_TOKEN`: 기존 인증 토큰 (로그인 후 자동 설정됨)
+`.env.local` 파일에 설정 (프로젝트 루트):
+```ini
+# 필수 설정
+EDB_BASE_URL=https://dev-adminapi.edbintra.co.kr  # 또는 실서버: https://webconsole-api.edbintra.co.kr
+EDB_LOGIN_URL=https://dev-adminapi.edbintra.co.kr/v1/auth/login
 
-## 아키텍처
+# 자동 로그인용 (선택)
+EDB_USER_ID=사용자_이메일
+EDB_PASSWORD=비밀번호
+
+# 기타 옵션
+EDB_TIMEOUT=15  # API 호출 타임아웃 (초)
+EDB_FORCE_LOGIN=false  # 중복 로그인 강제 해제
+```
+
+## 코드 아키텍처
 
 ### MCP 서버 구조
-FastMCP 프레임워크를 사용하여 도구들을 노출:
-
-1. **진입점** (`src/mcp_server.py`):
-   - "druginfo-mcp"라는 이름으로 FastMCP 인스턴스 생성
-   - auth와 druginfo 도구 모듈 등록
-   - 환경 설정 파일 로드
-
-2. **도구 모듈** (`src/mcp_tools/`):
-   - `auth_tools.py`: 로그인 도구 및 자동 로그인 기능
-   - `druginfo_tools.py`: 약물 정보 API 도구, 401 에러 시 자동 재시도
-   - `__init__.py`: 두 모듈의 등록 함수 내보내기
-
-3. **핵심 모듈**:
-   - `src/auth.py`: 토큰 추출 및 재시도 메커니즘을 가진 인증 로직
-   - `src/druginfo/client.py`: 약물 정보 엔드포인트용 API 클라이언트
-   - 둘 다 다양한 응답 형식과 자동 에러 처리 지원
-
-### 도구 구현
-
-**인증 도구** (`src/mcp_tools/auth_tools.py`):
-- `login(userId?, password?, force?, loginUrl?, timeout?)`: 인증 토큰 반환
-  - 환경 변수를 기본값으로 사용
-  - 토큰을 전역적으로 캐시하여 재사용
-  - 중복 로그인 에러(코드 4100) 시 자동 재시도
-
-**약물 정보 도구** (`src/mcp_tools/druginfo_tools.py`):
-- `druginfo_list_main_ingredient`: 필터링된 주성분 목록 조회
-- `druginfo_get_main_ingredient_by_code`: 특정 주성분 상세 정보
-- `druginfo_list_product`: 이미지 옵션과 함께 약물 제품 목록 조회
-- `druginfo_get_product_by_code`: 특정 제품 상세 정보
-- `druginfo_list_main_ingredient_drug_effect`: 약효 목록 조회
-- `druginfo_get_main_ingredient_drug_effect_by_id`: 특정 약효 정보
-- `druginfo_list_main_ingredient_drug_kind`: 약물 종류 목록
-- `druginfo_list_main_ingredient_guide_a4`: A4 가이드 목록
-- `druginfo_list_main_ingredient_guide_a5`: A5 가이드 목록
-- `druginfo_list_main_ingredient_picto`: 픽토그램 목록
-- `druginfo_get_main_ingredient_picto_by_code`: 특정 픽토그램
-- `druginfo_list_product_edicode`: EDI 코드 목록
-
-모든 druginfo 도구는 인증 실패(401 에러) 시 자동으로 로그인 후 재시도합니다.
-
-### 인증 흐름
-1. 서버 시작 시 환경 변수가 설정되어 있으면 자동 로그인 시도
-2. 로그인 도구는 입력된 자격증명 또는 환경 변수 기본값 사용
-3. 중복 로그인 에러(코드 4100) 발생 시 force=true로 자동 재시도
-4. 성공한 토큰은 `_AUTO_TOKEN`과 `EDB_TOKEN` 환경 변수에 캐시됨
-5. 토큰은 세션 동안 지속됨
-
-## Claude Desktop 통합
-
-Claude Desktop과 함께 사용하려면 다음 파일을 생성:
-`~/Library/Application Support/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "druginfo-mcp": {
-      "command": "/프로젝트/경로/.venv/bin/python",
-      "args": [
-        "-c",
-        "import sys; sys.path.insert(0, '/프로젝트/경로'); from src.mcp_server import create_server; create_server().run()"
-      ],
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "PYTHONPATH": "/프로젝트/경로",
-        "EDB_BASE_URL": "https://dev-adminapi.edbintra.co.kr",
-        "EDB_LOGIN_URL": "https://dev-adminapi.edbintra.co.kr/v1/auth/login",
-        "EDB_USER_ID": "사용자-이메일",
-        "EDB_PASSWORD": "비밀번호"
-      }
-    }
-  }
-}
+```
+src/
+├── server.py              # 표준 MCP 서버 진입점
+├── auth.py               # 인증 로직 (토큰 추출, 중복 로그인 처리)
+├── login_jwt.py          # CLI 유틸리티 (직접 테스트용)
+├── handlers/
+│   ├── __init__.py       # 핸들러 모듈
+│   ├── tools.py          # 도구 핸들러 (druginfo_* 도구들)
+│   ├── resources.py      # 리소스 핸들러 (설정, 문서)
+│   └── prompts.py        # 프롬프트 핸들러 (시스템 프롬프트)
+├── auth/
+│   ├── __init__.py
+│   └── manager.py        # 인증 관리자 (토큰 관리, 자동 로그인)
+├── utils/
+│   ├── __init__.py
+│   └── config.py         # 환경 설정 관리
+├── mcp_tools/            # 기존 도구 (호환성 유지)
+│   ├── auth_tools.py
+│   └── druginfo_tools.py
+└── druginfo/
+    ├── client.py         # API 클라이언트 (HTTP 요청 처리)
+    └── __init__.py       # druginfo 함수들 export
 ```
 
-`/프로젝트/경로`를 이 저장소의 절대 경로로 교체하세요.
+### 핵심 아키텍처 패턴
 
-## 중요 참고사항
+1. **자동 인증 재시도 패턴**:
+   - 모든 druginfo 도구는 UnauthorizedError(401) 발생 시 자동으로 `_try_auto_login()` 호출
+   - 재로그인 후 동일 요청 재시도 (1회)
+   - 토큰은 전역 변수 `_AUTO_TOKEN`과 환경 변수 `EDB_TOKEN`에 캐시
 
-- 서버는 시작 시 환경 변수를 사용하여 자동 로그인 시도
-- 성공적인 로그인 후 토큰은 세션 재사용을 위해 전역적으로 캐시됨
-- 중복 로그인 에러는 force 플래그로 자동 재시도 트리거
-- 모듈 가져오기는 호환성을 위해 표준 및 경로 추가 방식 모두 처리
-- README에는 많은 추가 도구들(pilldoc_accounts, pilldoc_user 등)이 언급되지만 아직 구현되지 않음
+2. **중복 로그인 처리**:
+   - `auth.py`의 `_is_duplicate_login_error()`가 응답 분석
+   - resultCode "4100" 또는 "중복로그인" 메시지 감지
+   - 자동으로 force=true로 재시도
+
+3. **토큰 추출 로직** (`extract_token()`):
+   - 다양한 응답 형식 지원 (accessToken, access_token, token, jwt 등)
+   - 중첩된 JSON 구조 재귀 탐색 (data, result, payload 필드)
+
+4. **환경 변수 우선순위**:
+   - `.env.local` > `.env` > 시스템 환경 변수
+   - `EDB_BASE_URL` 없으면 `EDB_LOGIN_URL`에서 호스트 추출
+
+5. **모듈 import 호환성 처리**:
+   - 표준 import 시도 후 실패 시 sys.path 추가
+   - Claude Desktop의 경로 문제 해결
+
+## 의약품 정보 도구 사용 가이드
+
+### 효율적인 검색 전략
+1. **제품 검색 워크플로우**:
+   ```python
+   # Step 1: 제품명으로 검색
+   druginfo_list_product(pillName="타이레놀", PageSize=5)
+   # → ProductCode 추출
+
+   # Step 2: 상세 정보 조회
+   druginfo_get_product_by_code(code="추출한_ProductCode")
+   # → 성분, korange 필드, 이미지 등 확인
+   ```
+
+2. **동일 성분 의약품 검색**:
+   ```python
+   # 토큰 효율적인 전용 도구 사용
+   druginfo_list_product_edicode_same_ingredient(
+       ProductCode="기준제품코드",
+       MasterIngredientCode="주성분코드"
+   )
+   ```
+
+3. **생물학적동등성(생동) 필터링**:
+   - API에서 직접 필터링 불가
+   - 응답 후 `korange.생동PK == "True"` 로컬 필터링
+
+### 의약품 코드 체계
+
+**ProductCode (15자리)** - 터울 자체 생성 코드:
+- 구조: `[의약품구분(1)][품목기준코드(9)][주성분코드끝3자리(3)][난수(2)]`
+- 예시: `E201207542ATB7D`
+  - E: 전문의약품 (O: 일반, T: 터울자체)
+  - 201207542: 품목기준코드
+  - ATB: 주성분 투여경로+제형
+  - 7D: 구별용 난수
+
+**주성분코드 (9자리)**:
+- 구조: `[주성분번호(3)][함량번호(3)][투여경로(1)][제형(2)]`
+- 예시: `553304ATD`
+  - 553: 주성분 (실데나필)
+  - 304: 함량
+  - A: 내복 (B:주사, C:외용, D:기타)
+  - TD: 정제
+- 동일성분 판별: 앞 4자리 + 7번째 자리 동일
+
+**korange 필드 해석**:
+- `생동PK`: "True"/"False" - PK 생동성시험 완료
+- `제네릭`: "True"/"False" - 제네릭 의약품
+- `공공대조약`: "True"/"False" - 공공 대조약품
+- `특허`: "True"/"False" - 특허 보호 여부
+
+## MCP 기능
+
+### 도구 (Tools)
+- `login`: EDB 시스템 로그인
+- `druginfo_list_main_ingredient`: 주성분 목록 검색
+- `druginfo_get_main_ingredient_by_code`: 주성분 상세 조회
+- `druginfo_list_product`: 제품 목록 검색
+- `druginfo_get_product_by_code`: 제품 상세 조회
+- `druginfo_list_product_edicode_same_ingredient`: 동일 성분 검색
+- `druginfo_list_product_edicode`: EDI 코드 검색
+
+### 리소스 (Resources)
+- `druginfo://config/env-template`: 환경 설정 템플릿
+- `druginfo://docs/code-system`: 의약품 코드 체계 문서
+- `druginfo://docs/query-patterns`: 자주 사용하는 쿼리 패턴
+- `druginfo://docs/korange-fields`: korange 필드 설명
+
+### 프롬프트 (Prompts)
+- `druginfo_usage_guide`: 도구 사용 가이드라인
+- `query_patterns`: 자주 사용하는 쿼리 패턴
+- `search_product`: 제품 검색 워크플로우
+- `find_bioequivalent`: 생물학적동등성 검색 가이드
 
 
-## 🔴 중요 규칙 (CRITICAL RULES)
+## 🔴 중요 규칙
 
 ### 언어 설정
-- 답변은 한글로 해줘
+- 답변은 한글로 작성
+
+### 토큰 최적화
+- PageSize는 필요한 만큼만 (기본 20, 탐색용 1-5)
+- 범용 도구보다 전용 도구 우선 사용
+- 응답 요약하여 필요 필드만 출력
