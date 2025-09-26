@@ -7,7 +7,8 @@ import logging
 from typing import Optional
 from datetime import datetime, timedelta
 
-from src.auth import login_and_get_token
+# 같은 패키지 내의 login 모듈에서 import
+from .login import login_and_get_token
 
 logger = logging.getLogger(__name__)
 

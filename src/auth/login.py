@@ -75,5 +75,3 @@ def login_and_get_token(
     if not token:
         raise RuntimeError("로그인 응답에서 토큰을 찾지 못했습니다.")
     return token
-
-
