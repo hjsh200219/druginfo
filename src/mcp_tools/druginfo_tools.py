@@ -20,6 +20,25 @@ from src.druginfo import (
     list_product_edicode_same_ingredient,
 )
 from src.mcp_tools.auth_tools import _try_auto_login
+from src.druginfo.response_filters import (
+    compact_generic_list,
+    compact_main_ingredient_detail,
+    compact_main_ingredient_list,
+    compact_product_detail,
+    compact_product_edicode_list,
+    compact_product_list,
+    compact_same_ingredient_list,
+)
+
+
+def _safe_compact(compactor, payload):
+    if compactor is None:
+        return payload
+    try:
+        compacted = compactor(payload)
+        return compacted if compacted is not None else payload
+    except Exception:
+        return payload
 
 
 def register_druginfo_tools(mcp: FastMCP) -> None:
@@ -46,50 +65,61 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
         size: Optional[int] = None,
         timeout: int = 15,
     ) -> Dict[str, Any]:
+        default_page_size = 5
+        default_page = 1
+        effective_page_size = PageSize if PageSize is not None else (size if size is not None else default_page_size)
+        effective_page = Page if Page is not None else (page if page is not None else default_page)
+
         try:
-            return list_main_ingredient(
-                a4=a4,
-                a4Off=a4Off,
-                a5=a5,
-                a5Off=a5Off,
-                drugkind=drugkind,
-                drugkindOff=drugkindOff,
-                effect=effect,
-                effectOff=effectOff,
-                showMapped=showMapped,
-                IngredientCode=IngredientCode,
-                ingredientNameKor=ingredientNameKor,
-                drugKind=drugKind,
-                PageSize=PageSize,
-                Page=Page,
-                SortBy=SortBy,
-                q=q,
-                page=page,
-                size=size,
-                timeout=int(timeout),
+            return _safe_compact(
+                compact_main_ingredient_list,
+                list_main_ingredient(
+                    a4=a4,
+                    a4Off=a4Off,
+                    a5=a5,
+                    a5Off=a5Off,
+                    drugkind=drugkind,
+                    drugkindOff=drugkindOff,
+                    effect=effect,
+                    effectOff=effectOff,
+                    showMapped=showMapped,
+                    IngredientCode=IngredientCode,
+                    ingredientNameKor=ingredientNameKor,
+                    drugKind=drugKind,
+                    PageSize=effective_page_size,
+                    Page=effective_page,
+                    SortBy=SortBy,
+                    q=q,
+                    page=page,
+                    size=size,
+                    timeout=int(timeout),
+                ),
             )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_main_ingredient(
-                a4=a4,
-                a4Off=a4Off,
-                a5=a5,
-                a5Off=a5Off,
-                drugkind=drugkind,
-                drugkindOff=drugkindOff,
-                effect=effect,
-                effectOff=effectOff,
-                showMapped=showMapped,
-                IngredientCode=IngredientCode,
-                ingredientNameKor=ingredientNameKor,
-                drugKind=drugKind,
-                PageSize=PageSize,
-                Page=Page,
-                SortBy=SortBy,
-                q=q,
-                page=page,
-                size=size,
-                timeout=int(timeout),
+            return _safe_compact(
+                compact_main_ingredient_list,
+                list_main_ingredient(
+                    a4=a4,
+                    a4Off=a4Off,
+                    a5=a5,
+                    a5Off=a5Off,
+                    drugkind=drugkind,
+                    drugkindOff=drugkindOff,
+                    effect=effect,
+                    effectOff=effectOff,
+                    showMapped=showMapped,
+                    IngredientCode=IngredientCode,
+                    ingredientNameKor=ingredientNameKor,
+                    drugKind=drugKind,
+                    PageSize=effective_page_size,
+                    Page=effective_page,
+                    SortBy=SortBy,
+                    q=q,
+                    page=page,
+                    size=size,
+                    timeout=int(timeout),
+                ),
             )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
@@ -97,10 +127,16 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
     @mcp.tool(name="druginfo_get_main_ingredient_by_code")
     def druginfo_get_main_ingredient_by_code(code: str, timeout: int = 15) -> Dict[str, Any]:
         try:
-            return get_main_ingredient_by_code(code=code, timeout=int(timeout))
+            return _safe_compact(
+                compact_main_ingredient_detail,
+                get_main_ingredient_by_code(code=code, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return get_main_ingredient_by_code(code=code, timeout=int(timeout))
+            return _safe_compact(
+                compact_main_ingredient_detail,
+                get_main_ingredient_by_code(code=code, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
@@ -131,58 +167,69 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
         size: Optional[int] = None,
         timeout: int = 15,
     ) -> Dict[str, Any]:
+        default_page_size = 5
+        default_page = 1
+        effective_page_size = PageSize if PageSize is not None else (size if size is not None else default_page_size)
+        effective_page = Page if Page is not None else (page if page is not None else default_page)
+
         try:
-            return list_product(
-                crop=crop,
-                cropOff=cropOff,
-                base64=base64,
-                base64Off=base64Off,
-                watermark=watermark,
-                watermarkOff=watermarkOff,
-                confirm=confirm,
-                confirmOff=confirmOff,
-                teoulLengthShort=teoulLengthShort,
-                teoulLengthShortOff=teoulLengthShortOff,
-                teoulLengthLong=teoulLengthLong,
-                teoulLengthLongOff=teoulLengthLongOff,
-                minCount=minCount,
-                ProductCode=ProductCode,
-                pillName=pillName,
-                vendor=vendor,
-                PageSize=PageSize,
-                Page=Page,
-                SortBy=SortBy,
-                q=q,
-                page=page,
-                size=size,
-                timeout=int(timeout),
+            return _safe_compact(
+                compact_product_list,
+                list_product(
+                    crop=crop,
+                    cropOff=cropOff,
+                    base64=base64,
+                    base64Off=base64Off,
+                    watermark=watermark,
+                    watermarkOff=watermarkOff,
+                    confirm=confirm,
+                    confirmOff=confirmOff,
+                    teoulLengthShort=teoulLengthShort,
+                    teoulLengthShortOff=teoulLengthShortOff,
+                    teoulLengthLong=teoulLengthLong,
+                    teoulLengthLongOff=teoulLengthLongOff,
+                    minCount=minCount,
+                    ProductCode=ProductCode,
+                    pillName=pillName,
+                    vendor=vendor,
+                    PageSize=effective_page_size,
+                    Page=effective_page,
+                    SortBy=SortBy,
+                    q=q,
+                    page=page,
+                    size=size,
+                    timeout=int(timeout),
+                ),
             )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_product(
-                crop=crop,
-                cropOff=cropOff,
-                base64=base64,
-                base64Off=base64Off,
-                watermark=watermark,
-                watermarkOff=watermarkOff,
-                confirm=confirm,
-                confirmOff=confirmOff,
-                teoulLengthShort=teoulLengthShort,
-                teoulLengthShortOff=teoulLengthShortOff,
-                teoulLengthLong=teoulLengthLong,
-                teoulLengthLongOff=teoulLengthLongOff,
-                minCount=minCount,
-                ProductCode=ProductCode,
-                pillName=pillName,
-                vendor=vendor,
-                PageSize=PageSize,
-                Page=Page,
-                SortBy=SortBy,
-                q=q,
-                page=page,
-                size=size,
-                timeout=int(timeout),
+            return _safe_compact(
+                compact_product_list,
+                list_product(
+                    crop=crop,
+                    cropOff=cropOff,
+                    base64=base64,
+                    base64Off=base64Off,
+                    watermark=watermark,
+                    watermarkOff=watermarkOff,
+                    confirm=confirm,
+                    confirmOff=confirmOff,
+                    teoulLengthShort=teoulLengthShort,
+                    teoulLengthShortOff=teoulLengthShortOff,
+                    teoulLengthLong=teoulLengthLong,
+                    teoulLengthLongOff=teoulLengthLongOff,
+                    minCount=minCount,
+                    ProductCode=ProductCode,
+                    pillName=pillName,
+                    vendor=vendor,
+                    PageSize=effective_page_size,
+                    Page=effective_page,
+                    SortBy=SortBy,
+                    q=q,
+                    page=page,
+                    size=size,
+                    timeout=int(timeout),
+                ),
             )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
@@ -190,10 +237,16 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
     @mcp.tool(name="druginfo_get_product_by_code")
     def druginfo_get_product_by_code(code: str, timeout: int = 15) -> Dict[str, Any]:
         try:
-            return get_product_by_code(code=code, timeout=int(timeout))
+            return _safe_compact(
+                compact_product_detail,
+                get_product_by_code(code=code, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return get_product_by_code(code=code, timeout=int(timeout))
+            return _safe_compact(
+                compact_product_detail,
+                get_product_by_code(code=code, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
@@ -205,11 +258,21 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
         sortBy: Optional[str] = None,
         timeout: int = 15,
     ) -> Dict[str, Any]:
+        if pageSize is None:
+            pageSize = 10
+        if page is None:
+            page = 1
         try:
-            return list_main_ingredient_drug_effect(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_drug_effect(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_main_ingredient_drug_effect(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_drug_effect(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
@@ -225,41 +288,81 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
 
     @mcp.tool(name="druginfo_list_main_ingredient_drug_kind")
     def druginfo_list_main_ingredient_drug_kind(edit: Optional[str] = None, pageSize: Optional[int] = None, page: Optional[int] = None, sortBy: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+        if pageSize is None:
+            pageSize = 10
+        if page is None:
+            page = 1
         try:
-            return list_main_ingredient_drug_kind(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_drug_kind(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_main_ingredient_drug_kind(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_drug_kind(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
     @mcp.tool(name="druginfo_list_main_ingredient_guide_a4")
     def druginfo_list_main_ingredient_guide_a4(edit: Optional[str] = None, pageSize: Optional[int] = None, page: Optional[int] = None, sortBy: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+        if pageSize is None:
+            pageSize = 10
+        if page is None:
+            page = 1
         try:
-            return list_main_ingredient_guide_a4(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_guide_a4(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_main_ingredient_guide_a4(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_guide_a4(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
     @mcp.tool(name="druginfo_list_main_ingredient_guide_a5")
     def druginfo_list_main_ingredient_guide_a5(edit: Optional[str] = None, pageSize: Optional[int] = None, page: Optional[int] = None, sortBy: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+        if pageSize is None:
+            pageSize = 10
+        if page is None:
+            page = 1
         try:
-            return list_main_ingredient_guide_a5(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_guide_a5(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_main_ingredient_guide_a5(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_guide_a5(edit=edit, pageSize=pageSize, page=page, sortBy=sortBy, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
     @mcp.tool(name="druginfo_list_main_ingredient_picto")
     def druginfo_list_main_ingredient_picto(IsDeleted: Optional[str] = None, Title: Optional[str] = None, PageSize: Optional[int] = None, Page: Optional[int] = None, SortBy: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+        if PageSize is None:
+            PageSize = 5
+        if Page is None:
+            Page = 1
         try:
-            return list_main_ingredient_picto(IsDeleted=IsDeleted, Title=Title, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_picto(IsDeleted=IsDeleted, Title=Title, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_main_ingredient_picto(IsDeleted=IsDeleted, Title=Title, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_generic_list,
+                list_main_ingredient_picto(IsDeleted=IsDeleted, Title=Title, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
@@ -275,21 +378,37 @@ def register_druginfo_tools(mcp: FastMCP) -> None:
 
     @mcp.tool(name="druginfo_list_product_edicode")
     def druginfo_list_product_edicode(ProductCode: Optional[str] = None, EdiCode: Optional[str] = None, PageSize: Optional[int] = None, Page: Optional[int] = None, SortBy: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+        if PageSize is None:
+            PageSize = 5
+        if Page is None:
+            Page = 1
         try:
-            return list_product_edicode(ProductCode=ProductCode, EdiCode=EdiCode, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_product_edicode_list,
+                list_product_edicode(ProductCode=ProductCode, EdiCode=EdiCode, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_product_edicode(ProductCode=ProductCode, EdiCode=EdiCode, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout))
+            return _safe_compact(
+                compact_product_edicode_list,
+                list_product_edicode(ProductCode=ProductCode, EdiCode=EdiCode, PageSize=PageSize, Page=Page, SortBy=SortBy, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
     @mcp.tool(name="druginfo_list_product_edicode_same_ingredient")
     def druginfo_list_product_edicode_same_ingredient(ProductCode: Optional[str] = None, EdiCode: Optional[str] = None, MasterIngredientCode: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
         try:
-            return list_product_edicode_same_ingredient(ProductCode=ProductCode, EdiCode=EdiCode, MasterIngredientCode=MasterIngredientCode, timeout=int(timeout))
+            return _safe_compact(
+                compact_same_ingredient_list,
+                list_product_edicode_same_ingredient(ProductCode=ProductCode, EdiCode=EdiCode, MasterIngredientCode=MasterIngredientCode, timeout=int(timeout)),
+            )
         except UnauthorizedError:
             _try_auto_login(timeout)
-            return list_product_edicode_same_ingredient(ProductCode=ProductCode, EdiCode=EdiCode, MasterIngredientCode=MasterIngredientCode, timeout=int(timeout))
+            return _safe_compact(
+                compact_same_ingredient_list,
+                list_product_edicode_same_ingredient(ProductCode=ProductCode, EdiCode=EdiCode, MasterIngredientCode=MasterIngredientCode, timeout=int(timeout)),
+            )
         except DrugInfoError as e:
             raise RuntimeError(str(e))
 
