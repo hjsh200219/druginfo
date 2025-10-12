@@ -12,47 +12,17 @@ from mcp.types import Resource, ResourceContents, TextResourceContents
 logger = logging.getLogger(__name__)
 
 
-def setup_resource_handlers(server: Server, config):
-    """리소스 핸들러 설정"""
+# 리소스 콘텐츠 캐시 (필요할 때만 로드)
+_RESOURCE_CACHE = {}
 
-    @server.list_resources()
-    async def handle_list_resources() -> List[Resource]:
-        """사용 가능한 리소스 목록 반환"""
-        resources = [
-            Resource(
-                uri="druginfo://config/env-template",
-                name="환경 설정 템플릿",
-                description=".env.local 파일 템플릿 - 환경 변수 설정 예시",
-                mimeType="text/plain",
-            ),
-            Resource(
-                uri="druginfo://docs/code-system",
-                name="의약품 코드 체계 문서",
-                description="의약품 코드 체계 상세 설명 (ProductCode, 주성분코드, EDI코드 등)",
-                mimeType="text/markdown",
-            ),
-            Resource(
-                uri="druginfo://docs/query-patterns",
-                name="자주 사용하는 쿼리 패턴",
-                description="DrugInfo API 활용 쿼리 패턴 모음",
-                mimeType="text/markdown",
-            ),
-            Resource(
-                uri="druginfo://docs/korange-fields",
-                name="korange 필드 설명",
-                description="생물학적동등성 관련 필드 상세 설명",
-                mimeType="text/markdown",
-            ),
-        ]
-        return resources
 
-    @server.read_resource()
-    async def handle_read_resource(uri: str) -> ResourceContents:
-        """리소스 내용 읽기"""
-        logger.info(f"리소스 읽기: {uri}")
+def _get_resource_content(uri: str) -> str:
+    """리소스 콘텐츠를 on-demand로 로드"""
+    if uri in _RESOURCE_CACHE:
+        return _RESOURCE_CACHE[uri]
 
-        if uri == "druginfo://config/env-template":
-            content = """# DrugInfo MCP 환경 설정
+    contents = {
+        "druginfo://config/env-template": """# DrugInfo MCP 환경 설정
 # .env.local 파일로 저장하여 사용하세요
 
 # 필수 설정
@@ -67,15 +37,8 @@ EDB_PASSWORD=your_password
 # 기타 옵션
 EDB_TIMEOUT=15  # API 호출 타임아웃 (초)
 EDB_FORCE_LOGIN=false  # 중복 로그인 강제 해제
-"""
-            return TextResourceContents(
-                uri=uri,
-                mimeType="text/plain",
-                text=content,
-            )
-
-        elif uri == "druginfo://docs/code-system":
-            content = """# 의약품 코드 체계
+""",
+        "druginfo://docs/code-system": """# 의약품 코드 체계
 
 ## ProductCode (15자리)
 터울 자체 생성 코드입니다.
@@ -107,15 +70,8 @@ EDB_FORCE_LOGIN=false  # 중복 로그인 강제 해제
 
 ## 품목기준코드 (9자리)
 식품의약품안전처에서 부여하는 의약품 허가 코드입니다.
-"""
-            return TextResourceContents(
-                uri=uri,
-                mimeType="text/markdown",
-                text=content,
-            )
-
-        elif uri == "druginfo://docs/query-patterns":
-            content = """# 자주 사용하는 쿼리 패턴
+""",
+        "druginfo://docs/query-patterns": """# 자주 사용하는 쿼리 패턴
 
 ## 1. 동일 성분 + 생동PK 검색
 ```python
@@ -155,15 +111,8 @@ druginfo_list_product_edicode(
     EdiCode="640905240"
 )
 ```
-"""
-            return TextResourceContents(
-                uri=uri,
-                mimeType="text/markdown",
-                text=content,
-            )
-
-        elif uri == "druginfo://docs/korange-fields":
-            content = """# korange 필드 설명
+""",
+        "druginfo://docs/korange-fields": """# korange 필드 설명
 
 생물학적동등성 및 제네릭 관련 정보를 담고 있는 필드입니다.
 
@@ -198,12 +147,64 @@ druginfo_list_product_edicode(
 - 타입: 수치+단위 (예: "70.23MG")
 - 의미: 주성분 함량
 - 활용: 용량 확인
-"""
-            return TextResourceContents(
-                uri=uri,
-                mimeType="text/markdown",
-                text=content,
-            )
+""",
+    }
 
-        else:
+    content = contents.get(uri)
+    if content:
+        _RESOURCE_CACHE[uri] = content
+    return content
+
+
+def setup_resource_handlers(server: Server, config):
+    """리소스 핸들러 설정"""
+
+    @server.list_resources()
+    async def handle_list_resources() -> List[Resource]:
+        """사용 가능한 리소스 목록 반환 - 메타데이터만"""
+        resources = [
+            Resource(
+                uri="druginfo://config/env-template",
+                name="환경 설정 템플릿",
+                description=".env.local 파일 템플릿",
+                mimeType="text/plain",
+            ),
+            Resource(
+                uri="druginfo://docs/code-system",
+                name="의약품 코드 체계",
+                description="ProductCode, 주성분코드 등",
+                mimeType="text/markdown",
+            ),
+            Resource(
+                uri="druginfo://docs/query-patterns",
+                name="쿼리 패턴",
+                description="자주 사용하는 API 패턴",
+                mimeType="text/markdown",
+            ),
+            Resource(
+                uri="druginfo://docs/korange-fields",
+                name="korange 필드",
+                description="생동PK 등 필드 설명",
+                mimeType="text/markdown",
+            ),
+        ]
+        return resources
+
+    @server.read_resource()
+    async def handle_read_resource(uri: str) -> ResourceContents:
+        """리소스 내용 읽기 - 요청 시점에 로드"""
+        logger.info(f"리소스 읽기: {uri}")
+
+        # 캐시에서 로드 또는 생성
+        content = _get_resource_content(uri)
+        if not content:
             raise ValueError(f"알 수 없는 리소스 URI: {uri}")
+
+        # MIME 타입 결정
+        mime_type = "text/markdown" if uri.startswith("druginfo://docs/") else "text/plain"
+
+        return TextResourceContents(
+            uri=uri,
+            mimeType=mime_type,
+            text=content,
+        )

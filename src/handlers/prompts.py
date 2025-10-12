@@ -17,41 +17,56 @@ from mcp.types import (
 logger = logging.getLogger(__name__)
 
 
+# 프롬프트 콘텐츠 캐시 (필요할 때만 로드)
+_PROMPT_CACHE = {}
+
+
+def _get_prompt_content(name: str, arguments: Optional[dict] = None) -> GetPromptResult:
+    """프롬프트 콘텐츠를 on-demand로 로드"""
+    cache_key = f"{name}:{str(arguments)}"
+
+    if cache_key in _PROMPT_CACHE:
+        return _PROMPT_CACHE[cache_key]
+
+    # 실제 콘텐츠 생성은 아래 handle_get_prompt에서 처리
+    return None
+
+
 def setup_prompt_handlers(server: Server):
     """프롬프트 핸들러 설정"""
 
     @server.list_prompts()
     async def handle_list_prompts() -> List[Prompt]:
-        """사용 가능한 프롬프트 목록 반환"""
+        """사용 가능한 프롬프트 목록 반환 - 메타데이터만"""
         prompts = [
             Prompt(
                 name="druginfo_usage_guide",
-                description="DrugInfo MCP 도구 사용 가이드라인 - 토큰 최적화와 효율적인 검색 전략",
+                description="도구 사용 가이드",
                 arguments=[],
             ),
             Prompt(
                 name="query_patterns",
-                description="자주 사용하는 쿼리 패턴과 워크플로우",
+                description="쿼리 패턴",
                 arguments=[],
             ),
             Prompt(
                 name="search_product",
-                description="의약품 검색 워크플로우 - 제품명으로 검색 후 상세 정보 조회",
+                description="제품 검색 워크플로우",
                 arguments=[
                     PromptArgument(
                         name="product_name",
-                        description="검색할 의약품 이름",
+                        description="의약품 이름",
                         required=True,
                     ),
                 ],
             ),
             Prompt(
                 name="find_bioequivalent",
-                description="생물학적동등성 의약품 검색 가이드",
+                description="생동성 검색 가이드",
                 arguments=[
                     PromptArgument(
                         name="ingredient_code",
-                        description="주성분 코드 (선택)",
+                        description="주성분 코드",
                         required=False,
                     ),
                 ],
@@ -63,8 +78,16 @@ def setup_prompt_handlers(server: Server):
     async def handle_get_prompt(
         name: str, arguments: Optional[dict] = None
     ) -> GetPromptResult:
-        """프롬프트 내용 반환"""
+        """프롬프트 내용 반환 - 요청 시점에 로드"""
         logger.info(f"프롬프트 요청: {name}, 인자: {arguments}")
+
+        # 캐시 확인
+        cache_key = f"{name}:{str(arguments)}"
+        if cache_key in _PROMPT_CACHE:
+            return _PROMPT_CACHE[cache_key]
+
+        # 콘텐츠 생성 및 캐싱
+        result = None
 
         if name == "druginfo_usage_guide":
             messages = [
@@ -99,7 +122,7 @@ def setup_prompt_handlers(server: Server):
                     ),
                 ),
             ]
-            return GetPromptResult(
+            result = GetPromptResult(
                 description="DrugInfo MCP 도구 사용을 위한 가이드라인",
                 messages=messages,
             )
@@ -139,7 +162,7 @@ def setup_prompt_handlers(server: Server):
                     ),
                 ),
             ]
-            return GetPromptResult(
+            result = GetPromptResult(
                 description="자주 사용하는 DrugInfo API 쿼리 패턴",
                 messages=messages,
             )
@@ -178,7 +201,7 @@ def setup_prompt_handlers(server: Server):
                     ),
                 ),
             ]
-            return GetPromptResult(
+            result = GetPromptResult(
                 description=f"{product_name} 검색 워크플로우",
                 messages=messages,
             )
@@ -232,10 +255,16 @@ def setup_prompt_handlers(server: Server):
                     content=TextContent(type="text", text=content),
                 ),
             ]
-            return GetPromptResult(
+            result = GetPromptResult(
                 description="생물학적동등성 의약품 검색 가이드",
                 messages=messages,
             )
 
         else:
             raise ValueError(f"알 수 없는 프롬프트: {name}")
+
+        # 결과 캐싱
+        if result:
+            _PROMPT_CACHE[cache_key] = result
+
+        return result

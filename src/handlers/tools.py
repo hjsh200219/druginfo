@@ -30,80 +30,104 @@ from src.druginfo import (
 logger = logging.getLogger(__name__)
 
 
+# 스키마 캐시 (필요할 때만 로드)
+_SCHEMA_CACHE = {}
+
+
+def _get_schema(tool_name: str) -> Dict[str, Any]:
+    """도구 스키마를 on-demand로 로드"""
+    if tool_name in _SCHEMA_CACHE:
+        return _SCHEMA_CACHE[tool_name]
+
+    schemas = {
+        "login": {
+            "type": "object",
+            "properties": {
+                "userId": {"type": "string"},
+                "password": {"type": "string"},
+                "force": {"type": "boolean", "default": False},
+            },
+            "required": ["userId", "password"],
+        },
+        "search_druginfo": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["ingredient", "product"],
+                    "description": "ingredient=주성분, product=제품"
+                },
+                "query": {"type": "string", "description": "검색어"},
+                "PageSize": {"type": "integer", "default": 20},
+                "Page": {"type": "integer", "default": 1},
+            },
+            "required": ["type", "query"],
+        },
+        "get_druginfo_detail": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["ingredient", "product"],
+                    "description": "ingredient=주성분(9자리), product=제품(15자리)"
+                },
+                "code": {"type": "string", "description": "코드"},
+            },
+            "required": ["type", "code"],
+        },
+        "find_same_ingredient": {
+            "type": "object",
+            "properties": {
+                "ProductCode": {"type": "string"},
+                "MasterIngredientCode": {"type": "string"},
+                "PageSize": {"type": "integer", "default": 20},
+            },
+        },
+    }
+
+    schema = schemas.get(tool_name, {})
+    _SCHEMA_CACHE[tool_name] = schema
+    return schema
+
+
 def setup_tool_handlers(server: Server, auth_manager):
     """도구 핸들러 설정"""
 
-    # 로그인 도구
     @server.list_tools()
     async def handle_list_tools() -> List[Tool]:
-        """사용 가능한 도구 목록 반환"""
+        """사용 가능한 도구 목록 반환 - 스키마는 최소화"""
         tools = [
             Tool(
                 name="login",
                 description="EDB 로그인",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "userId": {"type": "string"},
-                        "password": {"type": "string"},
-                        "force": {"type": "boolean", "default": False},
-                    },
-                    "required": ["userId", "password"],
-                },
+                inputSchema={"type": "object"},  # 최소 스키마
             ),
             Tool(
                 name="search_druginfo",
                 description="의약품 검색 (주성분/제품명/통합검색)",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "type": "string",
-                            "enum": ["ingredient", "product"],
-                            "description": "ingredient=주성분, product=제품"
-                        },
-                        "query": {"type": "string", "description": "검색어"},
-                        "PageSize": {"type": "integer", "default": 20},
-                        "Page": {"type": "integer", "default": 1},
-                    },
-                    "required": ["type", "query"],
-                },
+                inputSchema={"type": "object"},
             ),
             Tool(
                 name="get_druginfo_detail",
                 description="의약품 상세 조회 (코드 필요)",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "type": "string",
-                            "enum": ["ingredient", "product"],
-                            "description": "ingredient=주성분(9자리), product=제품(15자리)"
-                        },
-                        "code": {"type": "string", "description": "코드"},
-                    },
-                    "required": ["type", "code"],
-                },
+                inputSchema={"type": "object"},
             ),
             Tool(
                 name="find_same_ingredient",
                 description="동일 성분 의약품 검색",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "ProductCode": {"type": "string"},
-                        "MasterIngredientCode": {"type": "string"},
-                        "PageSize": {"type": "integer", "default": 20},
-                    },
-                },
+                inputSchema={"type": "object"},
             ),
         ]
         return tools
 
     @server.call_tool()
     async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """도구 실행"""
+        """도구 실행 - 실행 시점에 스키마 로드"""
         logger.info(f"도구 실행: {name}, 인자: {arguments}")
+
+        # 필요할 때만 상세 스키마 로드 (검증용)
+        schema = _get_schema(name)
+        logger.debug(f"스키마 로드됨: {name}")
 
         try:
             # 로그인
