@@ -1,8 +1,6 @@
-# agent.md
+# AGENTS.md
 
 의약품 정보 시스템(EDB)을 위한 Python MCP 서버. 의약품 정보 조회 도구를 MCP 클라이언트에 제공.
-
-> 전체 에이전트 네비게이션: [AGENTS.md](AGENTS.md)
 
 ## Tech Stack
 - Python 3.9+, MCP SDK (standard + FastMCP), requests, python-dotenv, pydantic
@@ -80,7 +78,6 @@ docs/
 ├── FRONTEND.md                  # N/A (백엔드 전용)
 ├── PLANS.md                     # 로드맵 및 개선 계획
 ├── PRODUCT_SENSE.md             # 제품 컨텍스트 및 사용 시나리오
-├── QUALITY.md                   # 도메인별 품질 점수표 (legacy)
 ├── QUALITY_SCORE.md             # 도메인별 품질 점수표
 ├── RELIABILITY.md               # 안정성 기준 및 장애 대응
 ├── SECURITY.md                  # 인증, 토큰 관리, 보안
@@ -89,8 +86,6 @@ docs/
 │   ├── core-beliefs.md          # 핵심 설계 원칙
 │   └── layer-rules.md          # import/의존성 린트 규칙
 ├── exec-plans/
-│   ├── active/
-│   ├── completed/
 │   └── tech-debt-tracker.md    # 기술 부채 추적
 ├── generated/
 │   └── db-schema.md            # API 응답 스키마
@@ -128,7 +123,7 @@ python -m src.server       # Standard MCP SDK
 ## Agent Entry Points
 
 ### Primary Instructions
-- [agent.md](agent.md) (= CLAUDE.md) -- 코어 규칙, 명령어, 아키텍처 요약
+- AGENTS.md (= CLAUDE.md symlink) -- 코어 규칙, 명령어, 아키텍처 요약
 
 ### Architecture & Design
 - [ARCHITECTURE.md](ARCHITECTURE.md) -- 전체 아키텍처, 레이어 구조, 데이터 흐름

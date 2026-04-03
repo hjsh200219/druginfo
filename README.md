@@ -108,7 +108,7 @@ python -m src.login_jwt --get "https://dev-adminapi.edbintra.co.kr/v1/druginfo/p
 
 ### 디렉토리
 - `src/mcp_server.py`: MCP 서버 엔트리
-- `src/auth.py`: 로그인/토큰 유틸
+- `src/auth/`: 로그인/토큰 유틸 (login.py, manager.py)
 - `src/mcp_tools/auth_tools.py`: `login` MCP 도구 등록 및 자동 로그인 처리
 - `src/mcp_tools/druginfo_tools.py`: DrugInfo 조회 MCP 도구들 등록
 - `src/druginfo/`: DrugInfo API 호출 모듈

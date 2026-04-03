@@ -2,7 +2,7 @@
 인증 모듈
 """
 
-from .login import login_and_get_token
+from .login import login_and_get_token, extract_token
 from .manager import AuthManager
 
-__all__ = ["AuthManager", "login_and_get_token"]
+__all__ = ["AuthManager", "login_and_get_token", "extract_token"]

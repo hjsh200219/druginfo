@@ -23,7 +23,7 @@ load_dotenv(".env", override=False)
 load_dotenv(".env.local", override=False)
 
 
-## token extraction moved to scripts.auth.extract_token
+## token extraction moved to src.auth.extract_token
 
 
 def fetch_jwt(

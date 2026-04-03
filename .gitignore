@@ -139,8 +139,9 @@ Thumbs.db
 
 # Claude Desktop & MCP
 .claude/*
-CLAUDE.md
-CLAUDE*.md
+
+# Harness GC workspace (temporary analysis results)
+_workspace/
 
 # MCP Server logs and cache
 *.mcp.log
