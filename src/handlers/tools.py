@@ -3,25 +3,16 @@
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from mcp.server import Server
 from mcp.types import Tool
-from pydantic import BaseModel, Field
 
 from src.druginfo import (
     list_main_ingredient,
     get_main_ingredient_by_code,
     list_product,
     get_product_by_code,
-    list_main_ingredient_drug_effect,
-    get_main_ingredient_drug_effect_by_id,
-    list_main_ingredient_drug_kind,
-    list_main_ingredient_guide_a4,
-    list_main_ingredient_guide_a5,
-    list_main_ingredient_picto,
-    get_main_ingredient_picto_by_code,
-    list_product_edicode,
     list_product_edicode_same_ingredient,
     UnauthorizedError,
     DrugInfoError,

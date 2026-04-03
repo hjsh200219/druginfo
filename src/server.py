@@ -8,23 +8,10 @@ import asyncio
 import sys
 import os
 import logging
-from typing import Any, Dict, List, Optional, Sequence
-
 from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
-from mcp.types import (
-    Tool,
-    TextContent,
-    Resource,
-    ResourceContents,
-    Prompt,
-    PromptMessage,
-    PromptArgument,
-    GetPromptResult,
-)
-from pydantic import BaseModel, Field
 
 # 환경 변수 로드
 load_dotenv(".env", override=False)

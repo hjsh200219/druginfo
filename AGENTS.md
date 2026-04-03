@@ -70,32 +70,6 @@ Entry Points → Handlers/Tools → DrugInfo Client → EDB API
 3. 생동PK 필터링: 응답 후 `korange.생동PK == "True"` 로컬 처리
 4. PageSize는 필요한 만큼만 (기본 20, 탐색용 1-5)
 
-## Knowledge Base (docs/)
-```
-docs/
-├── ARCHITECTURE.md              # 레이어 구조, 의존성, 데이터 흐름
-├── DESIGN.md                    # API 설계 패턴 및 확장 가이드
-├── FRONTEND.md                  # N/A (백엔드 전용)
-├── PLANS.md                     # 로드맵 및 개선 계획
-├── PRODUCT_SENSE.md             # 제품 컨텍스트 및 사용 시나리오
-├── QUALITY_SCORE.md             # 도메인별 품질 점수표
-├── RELIABILITY.md               # 안정성 기준 및 장애 대응
-├── SECURITY.md                  # 인증, 토큰 관리, 보안
-├── design-docs/
-│   ├── index.md
-│   ├── core-beliefs.md          # 핵심 설계 원칙
-│   └── layer-rules.md          # import/의존성 린트 규칙
-├── exec-plans/
-│   └── tech-debt-tracker.md    # 기술 부채 추적
-├── generated/
-│   └── db-schema.md            # API 응답 스키마
-├── product-specs/
-│   └── index.md
-└── references/
-    ├── druginfo-tools-guide.md  # 도구 상세 가이드
-    └── architecture-patterns.md # 아키텍처 패턴 상세
-```
-
 ## Agent Entry Points
 
 ### Primary Instructions
