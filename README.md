@@ -54,7 +54,7 @@ python -m src.mcp_server
 ```json
 {
   "name": "druginfo-mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "entry": "python -m src.mcp_server"
 }
 ```

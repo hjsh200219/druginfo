@@ -12,10 +12,10 @@
 - **우선순위**: High
 - **예상 공수**: 2시간
 
-### TD-002: Config 클래스 Pydantic 불일치
+### TD-002: Config 클래스 Pydantic 미사용
 - **위치**: `src/utils/config.py`
-- **설명**: ARCHITECTURE.md에는 Pydantic BaseSettings로 기술되어 있으나 실제로는 일반 Python 클래스
-- **영향**: 환경 변수 검증 미흡, 문서와 코드 불일치
+- **설명**: Config가 일반 Python 클래스로 구현되어 있으며 환경 변수 타입 검증이 없음
+- **영향**: 환경 변수 검증 미흡 (잘못된 타입/값 입력 시 런타임 에러)
 - **해결책**: Config를 Pydantic BaseSettings로 전환
 - **우선순위**: Medium
 - **예상 공수**: 1시간
