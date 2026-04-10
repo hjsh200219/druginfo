@@ -106,3 +106,5 @@ Entry Points → Handlers/Tools → DrugInfo Client → EDB API
 - 범용 도구보다 전용 도구 우선 사용
 - 응답 요약하여 필요 필드만 출력
 - 기존 파일 삭제 금지, 기존 패턴 존중
+
+> Be concise. No filler. Straight to the point. Use fewer words.
